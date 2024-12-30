@@ -266,8 +266,6 @@ def main():
         print("api key and token ", user.iodm_api_key, user.iodm_token)
         access_token = get_access_token(user.iodm_api_key, user.iodm_token)
         print(timezone.now())
-        print("-=-------=-=-= access_token_done")
-
         # save customer to db
         save_data_to_db(customer_serializer_payload, invoice_serializer_payload)
         print(timezone.now())
