@@ -157,28 +157,27 @@ def save_invoice():
     body = {
         "Invoices": [
             {
-                "InvoiceCode": "16695",
-                "Number": "16695",
-                "CreatedDate": "2024-11-30T00:00:00",
-                "DueDate": "2024-12-29T00:00:00",
-                "OriginalAmount": "14223.70",
-                "AmountOwing": "456666",
+                "InvoiceCode": "16699",
+                "Number": "16699",
+                "CreatedDate": "2014-11-30T00:00:00",
+                "DueDate": "2014-12-29T00:00:00",
+                "OriginalAmount": "895",
+                "AmountOwing": "0",
                 "Customer": {
-                    "CustomerCode": "703059",
+                    "CustomerCode": "832589",
                 },
             }
         ]
     }
     url = "https://api.sandbox.iodmconnectonline.com/invoice"
-    print("_----------------------- \n Access tojen", access_token)
     headers = {"Authorization": f"{access_token}", "Content-Type": "application/json"}
 
     response = requests.post(url, headers=headers, json=body)
     print("Status Code:", response.status_code)
-    print("Response:", response)
+    print("Response:", response.json())
 
 
 get_access_token()
-# get_cutomers_for_company()
-save_customer()
+# # get_cutomers_for_company()
+# save_customer()
 save_invoice()

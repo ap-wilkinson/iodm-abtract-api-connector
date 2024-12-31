@@ -115,23 +115,27 @@ def create_invoice_payload(user_id, invoices):
     invoice_list = []
     invoice_serializer_payload = []
     for invoice in invoices:
-        amount_owing = "0"
-        amount_paid = "0"
-        if invoice.get("InvoicePaid"):
-            amount_owing = "0"
-        else:
-            total_amount = (invoice or {}).get("OriginalAmount", 0)
-            amount_paid = (invoice or {}).get("AmountPaidInclTax", 0)
-            amount_owing = str(total_amount - amount_paid)
+        amount_owing = 0
+        amount_paid = 0
+        total_amount = (invoice or {}).get("InvLinesTotalInclTax", 0)
+        # if invoice.get("InvoicePaid"):
+        #     continue
+        # # else:
+
+        amount_paid = (invoice or {}).get("AmountPaidInclTax", 0)
+        amount_owing = str(total_amount - amount_paid)
+
+        if total_amount == 0:
+            total_amount = 1
         invoice_payload = {
             "InvoiceCode": str(invoice.get("InvoiceID")),
             "Number": str(invoice.get("InvoiceNumber")),
             "CreatedDate": invoice.get("InvoiceDate"),
             "DueDate": invoice.get("DueDate"),
-            "OriginalAmount": str(invoice.get("OriginalAmount")),
+            "OriginalAmount": str(abs(total_amount)),
             "AmountOwing": amount_owing,
             "Customer": {
-                "CustomerCode": str(invoice.get("ClientID")),
+                "CustomerCode": str(invoice.get("Client").get("ClientID")),
             },
         }
         invoice_serializer_payload.append(
@@ -143,7 +147,7 @@ def create_invoice_payload(user_id, invoices):
                 "amount_paid": amount_paid,
                 "due_date": invoice.get("DueDate"),
                 "created_at": invoice.get("InvoiceDate"),
-                "is_paid": (invoice or {}).get("AddressPostCode", False),
+                "is_paid": (invoice or {}).get("InvoicePaid", False),
                 "is_synced": False,
             }
         )
@@ -188,6 +192,7 @@ def save_invoice(access_token, invoices):
     # if the length of invoices is greater than 99, divide it by 99 and loop through the pages
     # then save the invoices
     invoices_per_page = 99
+
     number_of_pages = len(invoices) // invoices_per_page
     for page in range(number_of_pages):
         start = page * invoices_per_page
@@ -200,7 +205,7 @@ def save_invoice(access_token, invoices):
         }
         response = requests.post(url, headers=headers, json=body)
         if response.status_code == 200:
-            print("Invoice saved")
+            print(response.json())  # print the response
         else:
             print("body", body["Invoices"][0])
             print("REsp", response.json())
@@ -211,19 +216,17 @@ def save_data_to_db(customers, invoices):
     for customer in customers:
         serializer = CustomerSerializer(data=customer)
         if serializer.is_valid():
-            serializer.save()
+            serializer.create_or_update(serializer.data)
         else:
             print(serializer.errors)
-            return
 
     for invoice in invoices:
         serializer = InvoiceSerializer(data=invoice)
         if serializer.is_valid():
-            serializer.save()
+            serializer.create_or_update(serializer.data)
 
         else:
             print(serializer.errors)
-            return
 
 
 def get_data_not_synced():
@@ -262,6 +265,8 @@ def main():
         print("-=-------=-=-= invoices_done")
         invoices, invoice_serializer_payload = create_invoice_payload(user.id, invoices)
         print(timezone.now())
+        # write invoices to a text file
+
         print("-=-------=-=-= invoices_payload_done")
         print("api key and token ", user.iodm_api_key, user.iodm_token)
         access_token = get_access_token(user.iodm_api_key, user.iodm_token)
@@ -275,10 +280,10 @@ def main():
         print(timezone.now())
         print("-=-------=-=-= get_data_not_synced_done")
         print(access_token, "access_token")
-        save_customer(access_token, customers)
+        # save_customer(access_token, customers)
         print(timezone.now())
         print("-=-------=-=-= save_customer_done")
-
+        print("invoices length", len(invoices))
         save_invoice(access_token, invoices)
         print(timezone.now())
         customers = Customer.objects.filter(is_synced=False)
