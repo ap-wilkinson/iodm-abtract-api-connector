@@ -41,10 +41,6 @@ class CustomerSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Contacts must be a dictionary.")
         return value
 
-    def is_valid(self, *, raise_exception=False):
-        # ignore check of already existing customer
-        return True
-
     def save(self, **kwargs):
         """
         Override the save method to check if the customer exists.
@@ -186,10 +182,6 @@ class InvoiceSerializer(serializers.ModelSerializer):
 
             # Create a new instance
             return super().save(**kwargs)
-
-    def is_valid(self, *, raise_exception=False):
-        # ignore check of already existing invoice
-        return True
 
     def create_or_update(self, validated_data):
         """

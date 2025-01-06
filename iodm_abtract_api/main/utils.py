@@ -3,11 +3,12 @@ import requests
 from .serializer import CustomerSerializer, InvoiceSerializer
 from .models import Customer, Invoice, User
 
-
+iodm_url = "https://api.sandbox.iodmconnectonline.com/"
+abtract_url = "https://www.abtraconline.com/api/abtraccustomapi"
 def get_client_contacts(secret_key):
     # this is for abtract api
     url = (
-        "https://www.abtraconline.com/api/abtraccustomapi/GetClientContactList?user=&password=&secretKey="
+        f"{abtract_url}/GetClientContactList?user=&password=&secretKey="
         + secret_key
     )
     response = requests.get(url)
@@ -18,7 +19,7 @@ def get_client_contacts(secret_key):
 def get_client_adress(secret_key):
     # this is for abtract api
     url = (
-        " https://www.abtraconline.com/api/abtraccustomapi/GetClientAddressList?user=&password=&secretKey="
+        f"{abtract_url}/GetClientAddressList?user=&password=&secretKey="
         + secret_key
     )
     response = requests.get(url)
@@ -103,12 +104,28 @@ def create_customer_payload(secret_key, client_contact, user_id):
 def get_invoices(secret_key):
     # this is for abtract api
     url = (
-        "https://www.abtraconline.com/api/abtraccustomapi/GetInvoiceList?user=&password=&secretKey="
+        f"{abtract_url}/GetInvoiceList?user=&password=&secretKey="
         + secret_key
     )
     response = requests.get(url)
     data = response.json()
     return data
+
+
+def get_all_invoices(secret_key, start_page, page_size):
+    invoices = []
+    paid_invoices = []
+    for page in range(start_page, page_size):
+        print("page number", page)
+        url = f"{abtract_url}/GetInvoiceList?page={page}&user=&password=&secretKey={secret_key}"
+        response = requests.get(url)
+        data = response.json()
+        for invoice in data:
+            invoices.append(invoice)
+    return invoices
+
+
+# def update_invoices()
 
 
 def create_invoice_payload(user_id, invoices):
@@ -156,12 +173,11 @@ def create_invoice_payload(user_id, invoices):
 
 
 def get_access_token(iodm_access_key, iodm_secret_key):
-    url = "https://api.sandbox.iodmconnectonline.com/authorise/token"
+    url = f"{iodm_url}authorise/token"
     body = {"Key": iodm_access_key, "Token": iodm_secret_key}
     headers = {"Content-Type": "application/json"}
     response = requests.post(url, headers=headers, json=body)
     data = response.json()
-    print("Data", data)
     return data.get("AccessToken")
 
 
@@ -175,22 +191,19 @@ def save_customer(access_token, customers):
         end = (page + 1) * customers_per_page
         body = {"Customers": customers[start:end]}
 
-        url = "https://api.sandbox.iodmconnectonline.com/customer"
+        url = f"{iodm_url}customer"
         headers = {
             "Authorization": f"{access_token}",
             "Content-Type": "application/json",
         }
         response = requests.post(url, headers=headers, json=body)
         if response.status_code == 200:
-            print("Customer saved")
             continue
         print("REsp", response.json())
         print("Customer not saved")
 
 
 def save_invoice(access_token, invoices):
-    # if the length of invoices is greater than 99, divide it by 99 and loop through the pages
-    # then save the invoices
     invoices_per_page = 99
 
     number_of_pages = len(invoices) // invoices_per_page
@@ -198,7 +211,7 @@ def save_invoice(access_token, invoices):
         start = page * invoices_per_page
         end = (page + 1) * invoices_per_page
         body = {"Invoices": invoices[start:end]}
-        url = "https://api.sandbox.iodmconnectonline.com/invoice"
+        url = f"{iodm_url}invoice"
         headers = {
             "Authorization": f"{access_token}",
             "Content-Type": "application/json",
@@ -207,7 +220,6 @@ def save_invoice(access_token, invoices):
         if response.status_code == 200:
             print(response.json())  # print the response
         else:
-            print("body", body["Invoices"][0])
             print("REsp", response.json())
             print("Invoice not saved")
 
@@ -216,17 +228,17 @@ def save_data_to_db(customers, invoices):
     for customer in customers:
         serializer = CustomerSerializer(data=customer)
         if serializer.is_valid():
-            serializer.create_or_update(serializer.data)
-        else:
-            print(serializer.errors)
+            serializer.save(serializer.data)
+        # else:
+        #     print(serializer.errors)
 
     for invoice in invoices:
         serializer = InvoiceSerializer(data=invoice)
         if serializer.is_valid():
-            serializer.create_or_update(serializer.data)
+            serializer.save()
 
-        else:
-            print(serializer.errors)
+        # else:
+        #     print(serializer.errors)
 
 
 def get_data_not_synced():
@@ -245,8 +257,6 @@ def update_data_synced(customers, invoices):
 
 
 def main():
-    # for each user in the database get values and call functions and save data
-    # get all users with staff status false
     users = User.objects.filter(is_staff=False)
 
     for user in users:
@@ -260,7 +270,9 @@ def main():
         )
         print(timezone.now())
         print("-=-------=-=-= customers_done")
-        invoices = get_invoices(secret_key)
+        invoices = get_all_invoices(
+            secret_key, user.abtract_start_page, user.abtract_page_size
+        )
         print(timezone.now())
         print("-=-------=-=-= invoices_done")
         invoices, invoice_serializer_payload = create_invoice_payload(user.id, invoices)
@@ -268,7 +280,6 @@ def main():
         # write invoices to a text file
 
         print("-=-------=-=-= invoices_payload_done")
-        print("api key and token ", user.iodm_api_key, user.iodm_token)
         access_token = get_access_token(user.iodm_api_key, user.iodm_token)
         print(timezone.now())
         # save customer to db
@@ -279,8 +290,7 @@ def main():
         # customers, invoices = get_data_not_synced()
         print(timezone.now())
         print("-=-------=-=-= get_data_not_synced_done")
-        print(access_token, "access_token")
-        # save_customer(access_token, customers)
+        save_customer(access_token, customers)
         print(timezone.now())
         print("-=-------=-=-= save_customer_done")
         print("invoices length", len(invoices))

@@ -11,7 +11,8 @@ class User(AbstractUser):
     iodm_token = models.CharField(max_length=255, blank=True, null=True)
     iodm_api_key = models.CharField(max_length=255, blank=True, null=True)
     abtract_secret_key = models.CharField(max_length=255, blank=True, null=True)
-
+    abtract_start_page = models.IntegerField(default=1)
+    abtract_page_size = models.IntegerField(default=27)
     # Modify groups and user_permissions to avoid conflicts with the default User model
     groups = models.ManyToManyField(
         Group,

@@ -5,4 +5,5 @@ from main.views import run_main
 
 urlpatterns = [
     path("run_main/", run_main, name="run_main"),
+    path('', run_main, name="index"),
 ]
