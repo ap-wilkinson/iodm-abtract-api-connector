@@ -1,7 +1,7 @@
 from django.utils import timezone
 import requests
-from .serializer import CustomerSerializer, InvoiceSerializer
-from .models import Customer, Invoice, User
+from ..serializer import CustomerSerializer, InvoiceSerializer
+from ..models import Customer, Invoice, User
 
 iodm_url = "https://api.sandbox.iodmconnectonline.com/"
 abtract_url = "https://www.abtraconline.com/api/abtraccustomapi"
