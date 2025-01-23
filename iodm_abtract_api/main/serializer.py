@@ -81,6 +81,8 @@ class CustomerSerializer(serializers.ModelSerializer):
         client_id = validated_data.get("client_id")
         # Get the customer_id from the validated data
         customer_id = validated_data.get("customer_id")
+        client_name = validated_data.get("client_name")
+        client_code = validated_data.get("client_code")
         # Get the contacts from the validated data
         contacts = validated_data.get("contacts")
         # Get the is_vip from the validated data
@@ -90,26 +92,31 @@ class CustomerSerializer(serializers.ModelSerializer):
         # Get the is_synced from the validated data
         is_synced = validated_data.get("is_synced")
         # Get the created_at from the validated data
-        created_at = validated_data.get("created_at")
+        created_at = validated_data.get("created_at") or timezone.now()
         # Get the updated_at from the validated data
-        updated_at = validated_data.get("updated_at")
+        updated_at = validated_data.get("updated_at") or timezone.now()
         # Check if the customer already exists
+        client = User.objects.get(id=client_id)
         try:
-            customer = Customer.objects.get(client_id=client_id)
+            customer = Customer.objects.get(id=customer_id)
             # Update the customer with the new data
-            customer.customer_id = customer_id
             customer.contacts = contacts
+            customer.client_name = client_name
+            customer.client_code = client_code
             customer.is_vip = is_vip
             customer.custom_fields = custom_fields
             customer.is_synced = is_synced
-            customer.created_at = created_at
+            # customer.created_at = created_at
             customer.updated_at = updated_at
             customer.save()
         except Customer.DoesNotExist:
-            # Create a new customer with the data
+            #get object of client_id from User model
+           
             customer = Customer.objects.create(
-                client_id=client_id,
-                customer_id=customer_id,
+                client_id=client,
+                id=customer_id,
+                client_name = client_name,
+                client_code = client_code,
                 contacts=contacts,
                 is_vip=is_vip,
                 custom_fields=custom_fields,
@@ -189,8 +196,10 @@ class InvoiceSerializer(serializers.ModelSerializer):
         """
         # Get the client_id from the validated data
         client_id = validated_data.get("client_id")
+        id = validated_data.get("id")
         # Get the customer_id from the validated data
         customer_id = validated_data.get("customer_id")
+        client_code = validated_data.get("client_code")
         # Get the amount_owning from the validated data
         amount_owning = validated_data.get("amount_owning")
         # Get the amount_paid from the validated data
@@ -202,27 +211,33 @@ class InvoiceSerializer(serializers.ModelSerializer):
         # Get the is_synced from the validated data
         is_synced = validated_data.get("is_synced")
         # Get the created_at from the validated data
-        created_at = validated_data.get("created_at")
+        created_at = validated_data.get("created_at") or timezone.now()
         # Get the updated_at from the validated data
-        updated_at = validated_data.get("updated_at")
+        updated_at = validated_data.get("updated_at") or timezone.now()
         # Check if the invoice already exists
+        client = User.objects.get(id=client_id)
+        customer = Customer.objects.get(id=customer_id)
         try:
-            invoice = Invoice.objects.get(client_id=client_id)
+            # print("CLIENT ID", client)
+            invoice = Invoice.objects.get(id=id)
             # Update the invoice with the new data
-            invoice.customer_id = customer_id
+            invoice.customer_id = customer
             invoice.amount_owning = amount_owning
             invoice.amount_paid = amount_paid
+            invoice.client_code = client_code
             invoice.due_date = due_date
             invoice.is_paid = is_paid
             invoice.is_synced = is_synced
-            invoice.created_at = created_at
+            # invoice.created_at = created_at
             invoice.updated_at = updated_at
             invoice.save()
         except Invoice.DoesNotExist:
             # Create a new invoice with the data
             invoice = Invoice.objects.create(
-                client_id=client_id,
-                customer_id=customer_id,
+                client_id=client,
+                customer_id=customer,
+                id = id,
+                client_code = client_code,
                 amount_owning=amount_owning,
                 amount_paid=amount_paid,
                 due_date=due_date,
