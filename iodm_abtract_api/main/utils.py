@@ -5,6 +5,8 @@ from .models import Customer, Invoice, User
 
 iodm_url = "https://api.sandbox.iodmconnectonline.com/"
 abtract_url = "https://www.abtraconline.com/api/abtraccustomapi"
+global invalid_cust 
+invalid_cust = []
 def get_clients(secret_key):
     # this is for abtract api
     url = (
@@ -91,22 +93,35 @@ def create_customer_payload(all_clients, clients_contacts, clients_adress, user_
     for client_id in all_clients:
         client = all_clients[client_id]
         contacts = clients_contacts.get(client_id)
+        values_missing = False 
         if not contacts:
-            print(client_id)
+            print(client_id, "no contact")
+            values_missing = True
             #create a empty list of contacts
+            
             contacts = [
                 {
-                    "FirstName": "",
-                    "SecondName": "",
-                    "Email": "",
-                    "Phone": "",
-                    "Mobile": "",
+                    "FirstName": "N/A",
+                    "SecondName": "N/A",
+                    "Email": "Na@na.com",
+                    "Phone": "123455689",
+                    "Mobile": "123455689",
 
                 }
             ]
-        adress = clients_adress.get(client_id, {})
-        if not adress:
+        adress = clients_adress.get(client_id)
+        if not adress or not adress.get("Address1"):
+            values_missing = True
             print(client_id, "no adress")
+            adress = {
+                "Address1": "N/A",
+                "Address2": "N/A",
+                "Address3": "N/A",
+                "Address4": "N/A",
+                "AddressPostCode": "5555",
+            }    
+        if values_missing:
+            invalid_cust.append(client_id)
         customer = {
             "CustomerCode": str(client.get("ClientCode")),
             "CompanyName": client.get("ClientName"),
@@ -137,6 +152,8 @@ def create_customer_payload(all_clients, clients_contacts, clients_adress, user_
             #         }
             # ]
         }
+        # if invalid_cust:
+        #     print(customer)
         contacts_dict = {
             f"contact{index+1}": {  # Dynamic key for each contact
                 "FirstName": contact.get("FirstName"),
@@ -160,6 +177,8 @@ def create_customer_payload(all_clients, clients_contacts, clients_adress, user_
             {
                 "customer_id": client_id,
                 "client_id": user_id,  # Assuming user_id is already defined
+                "client_name": client.get("ClientName"),
+                "client_code": str(client.get("ClientCode")),
                 "contacts": contacts_dict,  # Pass the dictionary of contacts here
                 "is_vip": client.get("IsVip", "false").lower()
                 == "true",  # Convert IsVip to boolean
@@ -169,7 +188,6 @@ def create_customer_payload(all_clients, clients_contacts, clients_adress, user_
         )
         customers.append(customer)
 
-    print(customers[0:5])
     return customers, customer_serializer_payload
     # customers = []
     # customer_serializer_payload = []
@@ -291,7 +309,8 @@ def create_invoice_payload(user_id, invoices, all_clients):
         # if invoice.get("InvoicePaid"):
         #     continue
         # # else:
-        customer_code = all_clients.get(invoice.get("Client").get("ClientID")).get(
+        client_id = invoice.get("Client").get("ClientID")
+        customer_code = all_clients.get(client_id).get(
             "ClientCode"
         )
         if not customer_code:
@@ -300,7 +319,9 @@ def create_invoice_payload(user_id, invoices, all_clients):
             continue
         amount_paid = (invoice or {}).get("AmountPaidInclTax", 0)
         amount_owing = str(total_amount - amount_paid)
-
+        if client_id in invalid_cust:
+            print("invalid customer")
+            continue
         if total_amount == 0:
             total_amount = 1
         invoice_payload = {
@@ -334,6 +355,7 @@ def create_invoice_payload(user_id, invoices, all_clients):
             {
                 "id": invoice.get("InvoiceID"),
                 "client_id": user_id,
+                "client_code": customer_code,
                 "customer_id": invoice.get("Client").get("ClientID"),
                 "amount_owning": amount_owing,
                 "amount_paid": amount_paid,
@@ -359,7 +381,7 @@ def get_access_token(iodm_access_key, iodm_secret_key):
 def save_customer(access_token, customers):
     # get length of customers and divide it by 99 to get the number of pages
     # then loop through the pages and save the customers
-    customers_per_page = 99
+    customers_per_page = 90
     number_of_pages = len(customers) // customers_per_page
     for page in range(number_of_pages):
         start = page * customers_per_page
@@ -373,6 +395,7 @@ def save_customer(access_token, customers):
         }
         response = requests.post(url, headers=headers, json=body)
         if response.status_code == 200:
+            print(response.json())  # print the response
             continue
         print("REsp", response)
         print("Customer not saved")
@@ -396,23 +419,24 @@ def save_invoice(access_token, invoices):
             print(response.json())  # print the response
         else:
             print("REsp", response.json())
+            print("invoice")
             print("Invoice not saved")
 
 
 def save_data_to_db(customers, invoices):
     for customer in customers:
         serializer = CustomerSerializer(data=customer)
-        if serializer.is_valid():
+        try:
             serializer.create_or_update(serializer.initial_data)
-        else:
-            print(serializer.errors, " customer errors")
+        except Exception as e:
+            print(e, " customer errors")
 
     for invoice in invoices:
         serializer = InvoiceSerializer(data=invoice)
-        if serializer.is_valid():
+        try:
             serializer.create_or_update(serializer.initial_data)
-        else:
-            print(serializer.errors, " invoice errors")
+        except Exception as e:
+            print(e, " invoice errors")
     
 
 def get_data_not_synced():
@@ -436,7 +460,6 @@ def main():
     for user in users:
         secret_key = user.abtract_secret_key
         all_clients = get_clients(secret_key)
-        print(all_clients, "all_clients")
         client_contacts = get_client_contacts(secret_key)
         clients_adress = get_client_adress(secret_key)
        
