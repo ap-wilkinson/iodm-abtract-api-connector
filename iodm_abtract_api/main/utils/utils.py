@@ -93,9 +93,12 @@ def create_customer_payload(all_clients, clients_contacts, clients_adress, user_
     for client_id in all_clients:
         client = all_clients[client_id]
         contacts = clients_contacts.get(client_id)
+        #check if mobile is missing in contacts
+       
+
         values_missing = False 
         if not contacts:
-            print(client_id, "no contact")
+            print(client_id," ",client.get("ClientCode"), "no contact")
             values_missing = True
             #create a empty list of contacts
             
@@ -104,22 +107,54 @@ def create_customer_payload(all_clients, clients_contacts, clients_adress, user_
                     "FirstName": "N/A",
                     "SecondName": "N/A",
                     "Email": "Na@na.com",
-                    "Phone": "123455689",
-                    "Mobile": "123455689",
+                    "Phone": "0444 444 444",
+                    "Mobile": "0444 444 444",
 
                 }
             ]
         adress = clients_adress.get(client_id)
         if not adress or not adress.get("Address1"):
             values_missing = True
-            print(client_id, "no adress")
+            print(client_id," ",client.get("ClientCode")," no adress")
             adress = {
                 "Address1": "N/A",
                 "Address2": "N/A",
                 "Address3": "N/A",
                 "Address4": "N/A",
                 "AddressPostCode": "5555",
-            }    
+            }   
+        #itterate over adress and get all keys and check if any key value is missing or "" then add a default value 
+        
+        for key in adress:
+            if not adress.get(key):
+                values_missing = True
+                print(client_id," ",client.get("ClientCode"), "no ",key) 
+                adress[key] = "N/A"
+
+
+        for contact in contacts:
+            if not contact.get("Mobile"):
+                values_missing = True
+                print(client_id," ",client.get("ClientCode"), "no mobile") 
+                contact["Mobile"] = "0444 444 444"
+            if not contact.get("Phone"):
+                values_missing = True
+                print(client_id," ",client.get("ClientCode"), "no phone") 
+                contact["Phone"] = "0444 444 444"
+            if not contact.get("Email"):
+                values_missing = True
+                print(client_id," ",client.get("ClientCode"), "no email") 
+                contact["Email"] = "na@natry2.com"
+            if not contact.get("FirstName"):
+                values_missing = True
+                print(client_id," ",client.get("ClientCode"), "no firstname") 
+                contact["FirstName"] = "N/A"
+            if not contact.get("SecondName"):
+                values_missing = True
+                print(client_id," ",client.get("ClientCode"), "no secondname") 
+                contact["SecondName"] = "N/A"
+            
+
         if values_missing:
             invalid_cust.append(client_id)
         customer = {
@@ -131,17 +166,17 @@ def create_customer_payload(all_clients, clients_contacts, clients_adress, user_
             "IsVip": "false",
             "Contacts": [
                 {
-                    "FirstName": contact.get("FirstName"),
-                    "LastName": contact.get("SecondName"),
-                    "AddressLine1": adress.get("Address1", ""),
-                    "AddressLine2": adress.get("Address2", ""),
-                    "City": adress.get("Address3", ""),
-                    "State": adress.get("Address4", ""),
-                    "Postcode": adress.get("AddressPostCode", ""),
+                    "FirstName": contact.get("FirstName", "n/a"),
+                    "LastName": contact.get("SecondName", "n/a"),
+                    "AddressLine1": adress.get("Address1", "n/a"),
+                    "AddressLine2": adress.get("Address2", "n/a"),
+                    "City": adress.get("Address3", "n/a"),
+                    "State": adress.get("Address4", "na"),
+                    "Postcode": adress.get("AddressPostCode", "45"),
                     "Country": "AU",
-                    "Email": contact.get("Email"),
-                    "MobileNumber": contact.get("Mobile"),
-                    "PhoneNumber": contact.get("Phone"),
+                    "Email": contact.get("Email", "na@g.com"),
+                    "MobileNumber": contact.get("Mobile", "0444 444 444"),
+                    "PhoneNumber": contact.get("Phone", "0444 444 444"),
                 }
                 for contact in contacts
             ],
@@ -152,8 +187,8 @@ def create_customer_payload(all_clients, clients_contacts, clients_adress, user_
             #         }
             # ]
         }
-        # if invalid_cust:
-        #     print(customer)
+        if values_missing:
+            print("Invalid cust value missing",customer)
         contacts_dict = {
             f"contact{index+1}": {  # Dynamic key for each contact
                 "FirstName": contact.get("FirstName"),
@@ -319,9 +354,9 @@ def create_invoice_payload(user_id, invoices, all_clients):
             continue
         amount_paid = (invoice or {}).get("AmountPaidInclTax", 0)
         amount_owing = str(total_amount - amount_paid)
-        if client_id in invalid_cust:
-            print("invalid customer")
-            continue
+        # if client_id in invalid_cust:
+        #     print("invalid customer")
+        #     continue
         if total_amount == 0:
             total_amount = 1
         invoice_payload = {
@@ -381,7 +416,7 @@ def get_access_token(iodm_access_key, iodm_secret_key):
 def save_customer(access_token, customers):
     # get length of customers and divide it by 99 to get the number of pages
     # then loop through the pages and save the customers
-    customers_per_page = 90
+    customers_per_page = 20
     number_of_pages = len(customers) // customers_per_page
     for page in range(number_of_pages):
         start = page * customers_per_page
@@ -396,9 +431,11 @@ def save_customer(access_token, customers):
         response = requests.post(url, headers=headers, json=body)
         if response.status_code == 200:
             print(response.json())  # print the response
-            continue
-        print("REsp", response)
-        print("Customer not saved")
+            # continue
+        else:
+            print("REsp", response)
+            print("Customer not saved")
+        print(response)
 
 
 def save_invoice(access_token, invoices):
