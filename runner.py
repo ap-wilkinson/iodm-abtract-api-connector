@@ -177,7 +177,19 @@ def save_invoice():
     print("Response:", response.json())
 
 
-get_access_token()
-# # get_cutomers_for_company()
-# save_customer()
-save_invoice()
+# get_access_token()
+# # # get_cutomers_for_company()
+# # save_customer()
+# save_invoice()
+
+count_customer = 26 
+#create a list with all alphabets 
+alphabets = [chr(i) for i in range(65,91)]
+
+pages = count_customer//20
+for i in range(pages+1):
+    print("Page", i)
+    start = i*20
+    end = (i+1)*20
+    print([alphabets[start:end]])
+    

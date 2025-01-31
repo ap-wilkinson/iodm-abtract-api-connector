@@ -96,7 +96,7 @@ def create_customer_payload(all_clients, clients_contacts, clients_adress, user_
         #check if mobile is missing in contacts
        
 
-        values_missing = False 
+        # values_missing = False 
         if not contacts:
             print(client_id," ",client.get("ClientCode"), "no contact")
             values_missing = True
@@ -104,59 +104,57 @@ def create_customer_payload(all_clients, clients_contacts, clients_adress, user_
             
             contacts = [
                 {
-                    "FirstName": "N/A",
-                    "SecondName": "N/A",
-                    "Email": "Na@na.com",
-                    "Phone": "0444 444 444",
-                    "Mobile": "0444 444 444",
+                    "FirstName": "",
+                    "SecondName": "",
+                    "Email": "",
+                    "Phone": "",
+                    "Mobile": "",
 
                 }
             ]
         adress = clients_adress.get(client_id)
-        if not adress or not adress.get("Address1"):
-            values_missing = True
-            print(client_id," ",client.get("ClientCode")," no adress")
+        if not adress:
             adress = {
-                "Address1": "N/A",
-                "Address2": "N/A",
-                "Address3": "N/A",
-                "Address4": "N/A",
-                "AddressPostCode": "5555",
+                "Address1": "",
+                "Address2": "",
+                "Address3": "",
+                "Address4": "",
+                "AddressPostCode": "",
             }   
-        #itterate over adress and get all keys and check if any key value is missing or "" then add a default value 
+        # #itterate over adress and get all keys and check if any key value is missing or "" then add a default value 
         
-        for key in adress:
-            if not adress.get(key):
-                values_missing = True
-                print(client_id," ",client.get("ClientCode"), "no ",key) 
-                adress[key] = "N/A"
+        # for key in adress:
+        #     if not adress.get(key):
+        #         values_missing = True
+        #         print(client_id," ",client.get("ClientCode"), "no ",key) 
+        #         adress[key] = "N/A"
 
 
-        for contact in contacts:
-            if not contact.get("Mobile"):
-                values_missing = True
-                print(client_id," ",client.get("ClientCode"), "no mobile") 
-                contact["Mobile"] = "0444 444 444"
-            if not contact.get("Phone"):
-                values_missing = True
-                print(client_id," ",client.get("ClientCode"), "no phone") 
-                contact["Phone"] = "0444 444 444"
-            if not contact.get("Email"):
-                values_missing = True
-                print(client_id," ",client.get("ClientCode"), "no email") 
-                contact["Email"] = "na@natry2.com"
-            if not contact.get("FirstName"):
-                values_missing = True
-                print(client_id," ",client.get("ClientCode"), "no firstname") 
-                contact["FirstName"] = "N/A"
-            if not contact.get("SecondName"):
-                values_missing = True
-                print(client_id," ",client.get("ClientCode"), "no secondname") 
-                contact["SecondName"] = "N/A"
+        # for contact in contacts:
+        #     if not contact.get("Mobile"):
+        #         values_missing = True
+        #         print(client_id," ",client.get("ClientCode"), "no mobile") 
+        #         contact["Mobile"] = "0444 444 444"
+        #     if not contact.get("Phone"):
+        #         values_missing = True
+        #         print(client_id," ",client.get("ClientCode"), "no phone") 
+        #         contact["Phone"] = "0444 444 444"
+        #     if not contact.get("Email"):
+        #         values_missing = True
+        #         print(client_id," ",client.get("ClientCode"), "no email") 
+        #         contact["Email"] = "na@natry2.com"
+        #     if not contact.get("FirstName"):
+        #         values_missing = True
+        #         print(client_id," ",client.get("ClientCode"), "no firstname") 
+        #         contact["FirstName"] = "N/A"
+        #     if not contact.get("SecondName"):
+        #         values_missing = True
+        #         print(client_id," ",client.get("ClientCode"), "no secondname") 
+        #         contact["SecondName"] = "N/A"
             
 
-        if values_missing:
-            invalid_cust.append(client_id)
+        # if values_missing:
+        #     invalid_cust.append(client_id)
         customer = {
             "CustomerCode": str(client.get("ClientCode")),
             "CompanyName": client.get("ClientName"),
@@ -187,8 +185,6 @@ def create_customer_payload(all_clients, clients_contacts, clients_adress, user_
             #         }
             # ]
         }
-        if values_missing:
-            print("Invalid cust value missing",customer)
         contacts_dict = {
             f"contact{index+1}": {  # Dynamic key for each contact
                 "FirstName": contact.get("FirstName"),
@@ -302,32 +298,57 @@ def get_invoices(secret_key):
     return data
 
 
-def get_all_invoices(secret_key, start_page, page_size):
-    invoices = []
-    paid_invoices = []
-    for page in range(start_page, page_size):
-        print("page number", page)
-        url = f"{abtract_url}/GetInvoiceList?page={page}&user=&password=&secretKey={secret_key}"
-        response = requests.get(url)
-        data = response.json()
-        for invoice in data:
-            invoices.append(invoice)
-    return invoices
+# def get_all_invoices(secret_key, start_page, page_size):
+#     invoices = []
+#     paid_invoices = []
+#     for page in range(start_page, page_size):
+#         print("page number", page)
+#         url = f"{abtract_url}/GetInvoiceList?page={page}&user=&password=&secretKey={secret_key}"
+#         response = requests.get(url)
+#         data = response.json()
+#         for invoice in data:
+#             invoices.append(invoice)
+#     return invoices
 
 
 # def update_invoices()
 
 
-def get_all_invoices(secret_key, start_page, page_size):
+def get_all_invoices(secret_key, user):
     invoices = []
+    start_page = user.abtract_start_page
+    page_size = user.abtract_page_size
     paid_invoices = []
-    for page in range(start_page, page_size):
+    for page in range(start_page, page_size+1):
         print("page number", page)
         url = f"{abtract_url}/GetInvoiceList?page={page}&user=&password=&secretKey={secret_key}"
         response = requests.get(url)
         data = response.json()
         for invoice in data:
             invoices.append(invoice)
+    try: 
+        #check if next page exists 
+        end_page = page_size 
+        while True: 
+            print("page number", end_page)
+            new_end_page = end_page + 1
+            url = f"{abtract_url}/GetInvoiceList?page={new_end_page}&user=&password=&secretKey={secret_key}"
+            response = requests.get(url)
+            data = response.json()
+            print(data, "data")
+            print("data length", len(data))
+            if len(data) == 0:
+                break
+            for invoice in data:
+                invoices.append(invoice)
+            user.abtract_page_size = new_end_page
+            user.save()        
+
+    except Exception as e:
+        print(e)
+    
+
+
     return invoices
 
 
@@ -416,9 +437,9 @@ def get_access_token(iodm_access_key, iodm_secret_key):
 def save_customer(access_token, customers):
     # get length of customers and divide it by 99 to get the number of pages
     # then loop through the pages and save the customers
-    customers_per_page = 20
+    customers_per_page = 99
     number_of_pages = len(customers) // customers_per_page
-    for page in range(number_of_pages):
+    for page in range(number_of_pages+1):
         start = page * customers_per_page
         end = (page + 1) * customers_per_page
         body = {"Customers": customers[start:end]}
@@ -442,7 +463,7 @@ def save_invoice(access_token, invoices):
     invoices_per_page = 99
 
     number_of_pages = len(invoices) // invoices_per_page
-    for page in range(number_of_pages):
+    for page in range(number_of_pages+1):
         start = page * invoices_per_page
         end = (page + 1) * invoices_per_page
         body = {"Invoices": invoices[start:end]}
@@ -500,19 +521,16 @@ def main():
         client_contacts = get_client_contacts(secret_key)
         clients_adress = get_client_adress(secret_key)
        
-        # # print timestampe
-        # print(timezone.now())
-        # print("-=-------=-=-= client_contacts_done")
         customers, customer_serializer_payload = create_customer_payload(
             all_clients, client_contacts, clients_adress, user.id
         )
         
         print("-=-------=-=-= customers_done")
         invoices = get_all_invoices(
-            secret_key, user.abtract_start_page, user.abtract_page_size
+            secret_key, user
         )
         print(timezone.now())
-        print("-=-------=-=-= invoices_done")
+        
         invoices, invoice_serializer_payload = create_invoice_payload(user.id, invoices, all_clients)
         print(timezone.now())
         # write invoices to a text file

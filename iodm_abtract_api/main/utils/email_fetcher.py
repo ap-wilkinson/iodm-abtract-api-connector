@@ -58,16 +58,18 @@ def check_emails():
                                     pdf_content = part.get_payload(decode=True)
                                     
                                     # Save the PDF content to a file (optional)
-                                    pdf_path = os.path.join("/", filename)
-                                    with open(pdf_path, "wb") as pdf_file:
-                                        pdf_file.write(pdf_content)
+                                    if "invoice" in filename:
+                                        pdf_path = os.path.join("/", 
+                                                                )
+                                        with open(pdf_path, "wb") as pdf_file:
+                                            pdf_file.write(pdf_content)
 
-                                    # Call the upload_attachment function with the PDF and sender's name
-                                    sender_name = from_  # You can also extract the sender's name more explicitly if needed
-                                    upload_attachment(pdf_path, sender_name)
+                                        # Call the upload_attachment function with the PDF and sender's name
+                                        sender_name = from_  # You can also extract the sender's name more explicitly if needed
+                                        upload_attachment(pdf_path, sender_name)
 
-                                    # Optionally delete the downloaded PDF after processing
-                                    os.remove(pdf_path)
+                                        # Optionally delete the downloaded PDF after processing
+                                        os.remove(pdf_path)
 
                     else:
                         # If it's not multipart, check if the email itself is a PDF attachment (less likely)
