@@ -2,7 +2,7 @@ from django.utils import timezone
 import requests
 from ..serializer import CustomerSerializer, InvoiceSerializer
 from ..models import Customer, Invoice, User
-
+from .invoice_attach import attach_invoice
 iodm_url = "https://api.sandbox.iodmconnectonline.com/"
 abtract_url = "https://www.abtraconline.com/api/abtraccustomapi"
 global invalid_cust 
@@ -431,6 +431,7 @@ def get_access_token(iodm_access_key, iodm_secret_key):
     headers = {"Content-Type": "application/json"}
     response = requests.post(url, headers=headers, json=body)
     data = response.json()
+    print(data.get("AccessToken"))
     return data.get("AccessToken")
 
 
@@ -511,6 +512,12 @@ def update_data_synced(customers, invoices):
         invoice.is_synced = True
         invoice.save()
 
+
+def upload_invoice_attachment( invoice_number, file_path):
+    #get user where username is atl_testing
+    user = User.objects.get(username="atl_testing")
+    access_token = get_access_token(user.iodm_api_key, user.iodm_token)
+    attach_invoice(invoice_number, file_path, access_token)
 
 def main():
     users = User.objects.filter(is_staff=False)

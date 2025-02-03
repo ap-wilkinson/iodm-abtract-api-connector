@@ -1,4 +1,5 @@
 import imaplib
+import re 
 import email
 from email.header import decode_header
 from django.conf import settings
@@ -7,7 +8,7 @@ import imaplib
 import email
 from email.header import decode_header
 import os
-
+from .utils import upload_invoice_attachment
 def check_emails():
     # Set up the connection to Gmail
     mail = imaplib.IMAP4_SSL('imap.gmail.com')
@@ -56,20 +57,23 @@ def check_emails():
 
                                     # Get the PDF content
                                     pdf_content = part.get_payload(decode=True)
-                                    
-                                    # Save the PDF content to a file (optional)
-                                    if "invoice" in filename:
-                                        pdf_path = os.path.join("/", 
-                                                                )
+                                    #get subject of email 
+                                    #get email sender
+                                    subject = msg["Subject"]
+                                    #implement regix to get 16862 from subject in format AT&L September Invoice No:16862, 23-1145 A - Tower Road - Watermain
+                                    invoice_number = re.search(r'Invoice No:(\d+)', subject).group(1)     
+                                    print(invoice_number)                               # Save the PDF content to a file (optional)
+                                    if invoice_number:
+                                        # pdf_path = os.path.join("/", 
+                                        pdf_path = os.getcwd() + f"/{filename}"
                                         with open(pdf_path, "wb") as pdf_file:
                                             pdf_file.write(pdf_content)
 
                                         # Call the upload_attachment function with the PDF and sender's name
                                         sender_name = from_  # You can also extract the sender's name more explicitly if needed
-                                        upload_attachment(pdf_path, sender_name)
-
+                                        upload_invoice_attachment(invoice_number, pdf_path)
                                         # Optionally delete the downloaded PDF after processing
-                                        os.remove(pdf_path)
+                                        #os.remove(pdf_path)
 
                     else:
                         # If it's not multipart, check if the email itself is a PDF attachment (less likely)

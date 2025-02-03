@@ -18,11 +18,11 @@ def get_access_token():
     headers = {"Content-Type": "application/json"}
 
     response = requests.post(url, headers=headers, json=body)
-    print("Status Code:", response.status_code)
-    print("Response:", response.json())
+    # print("Status Code:", response.status_code)
+    # print("Response:", response.json())
     global access_token
     access_token = response.json()["AccessToken"]
-    print("Access Token:", access_token)
+    #print("Access Token:", access_token)
 
 
 # Make the request
@@ -149,8 +149,8 @@ def save_customer():
 
     headers = {"Authorization": f"{access_token}", "Content-Type": "application/json"}
     response = requests.post(url, headers=headers, json=body)
-    print("Status Code:", response.status_code)
-    print("Response:", response)
+    # print("Status Code:", response.status_code)
+    # print("Response:", response)
 
 
 def save_invoice():
@@ -177,19 +177,174 @@ def save_invoice():
     print("Response:", response.json())
 
 
-# get_access_token()
+def get_invoice(invoice_number):
+    query = "query GET_INVOICES_FOR_COMPANY( \
+    $InvoiceState: String \
+    $InvoiceNumber: String \
+    $Customer: String \
+    $CustomerCode: String \
+    $CreatedDateMin: String \
+    $CreatedDateMax: String \
+    $DueDateMin: String \
+    $DueDateMax: String \
+    $AmountType: String \
+    $AmountValue: String \
+    $AmountOperator: String \
+    $SortField: String \
+    $Ascending: Boolean \
+    $PageSize: Int \
+    $Skip: Int \
+    $InvoiceIds: [ID] \
+    $CustomFieldFilters: String \
+    $CustomFieldSort: String \
+) { \
+    GetInvoicesForCompany( \
+            Filter: { \
+                InvoiceState: $InvoiceState \
+                InvoiceNumber: $InvoiceNumber \
+                Customer: $Customer \
+                CustomerCode: $CustomerCode \
+                CreatedDateMin: $CreatedDateMin \
+                CreatedDateMax: $CreatedDateMax \
+                DueDateMin: $DueDateMin \
+                DueDateMax: $DueDateMax \
+                AmountType: $AmountType \
+                AmountValue: $AmountValue \
+                AmountOperator: $AmountOperator \
+                SortField: $SortField \
+                Ascending: $Ascending \
+                PageSize: $PageSize \
+                Skip: $Skip \
+                InvoiceIds: $InvoiceIds \
+                CustomFieldFilters: $CustomFieldFilters \
+                CustomFieldSort: $CustomFieldSort             \
+            } \
+        ) { \
+            Invoices { \
+                Id \
+                InvoiceCode \
+                Number \
+                CreatedDate \
+                LocalCreatedDate \
+                DueDate \
+                LocalDueDate \
+                OriginalAmount \
+                AmountOwing \
+                State \
+                SettledDate \
+                LocalSettledDate \
+                Customer { \
+                    CustomerCode \
+                    CompanyName \
+                    DisplayName \
+                    Contacts { \
+                        Id \
+                        FirstName \
+                        LastName \
+                        AddressLine1 \
+                        AddressLine2 \
+                        City \
+                        State \
+                        Postcode \
+                        Country \
+                        Email \
+                        MobileNumber \
+                    } \
+                } \
+                Tickets { \
+                    Id \
+                    CompanyId \
+                    TicketNumber \
+                    State \
+                    Details \
+                    ResolvedReason \
+                    ResolvedDateTime \
+                    CreatedDateTime \
+                    TicketOption { \
+                        Id \
+                        Reason \
+                        CaptureMessage \
+                        Type \
+                    } \
+                    Uri \
+                } \
+                Uri \
+                CustomFields { \
+                    Name \
+                    Value \
+                } \
+                Attachments { \
+                    FileId \
+                    IsPublic \
+                    Title \
+                } \
+            } \
+        } \
+    }" 
+    url = "https://api.sandbox.iodmconnectonline.com/graphql"
+    body = {
+        "query": query,
+        "variables": {
+            "InvoiceNumber":"16862",
+            "Customer":"",
+            "CustomerCode":"",
+            "CreatedDateMin":"",
+            "CreatedDateMax":"",
+            "DueDateMin":"",
+            "DueDateMax":"",
+            "AmountType":"",
+            "AmountValue":"",
+            "AmountOperator":"",
+            "InvoiceState":"All",
+            "SortField":"Company name",
+            "Ascending":"true",
+            "PageSize":20,
+            "Skip":0
+        },
+    }
+    headers = {"Authorization": f"{access_token}", "Content-Type": "application/json"}
+    response = requests.post(url, headers=headers, json=body)
+    print("Status Code:", response.status_code)
+    print("Response:", response.json())
+    return response.json()["data"]["GetInvoicesForCompany"]["Invoices"][0]["Uri"]
+
+def get_invoice_attachment_url(uri):
+    url = "https://api.sandbox.iodmconnectonline.com/document/attachtoresource"
+    body = {
+    "IsPublic": "true",
+    "Title": "Invoice Attachment ",
+    "FileName": "Invoice 16862",
+    "Resource": {
+        "Uri": uri
+    }
+    }
+    headers = {
+    "Authorization": f"{access_token}",
+    "Content-Type": "application/json"
+
+    }
+    response = requests.post(url, headers=headers, json=body)
+    print("Status Code:", response.status_code)
+    print("Response:", response.json())
+    
+
+
+
+get_access_token()
 # # # get_cutomers_for_company()
 # # save_customer()
 # save_invoice()
+uri = get_invoice("16862")
+print(uri)
+get_invoice_attachment_url(uri)
+# count_customer = 26 
+# #create a list with all alphabets 
+# alphabets = [chr(i) for i in range(65,91)]
 
-count_customer = 26 
-#create a list with all alphabets 
-alphabets = [chr(i) for i in range(65,91)]
-
-pages = count_customer//20
-for i in range(pages+1):
-    print("Page", i)
-    start = i*20
-    end = (i+1)*20
-    print([alphabets[start:end]])
+# pages = count_customer//20
+# for i in range(pages+1):
+#     print("Page", i)
+#     start = i*20
+#     end = (i+1)*20
+#     print([alphabets[start:end]])
     
