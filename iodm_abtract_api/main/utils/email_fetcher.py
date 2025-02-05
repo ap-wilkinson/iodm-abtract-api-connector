@@ -71,7 +71,7 @@ def check_emails():
 
                                         # Call the upload_attachment function with the PDF and sender's name
                                         sender_name = from_  # You can also extract the sender's name more explicitly if needed
-                                        upload_invoice_attachment(invoice_number, pdf_path)
+                                        upload_invoice_attachment(invoice_number, pdf_path, filename)
                                         # Optionally delete the downloaded PDF after processing
                                         #os.remove(pdf_path)
 

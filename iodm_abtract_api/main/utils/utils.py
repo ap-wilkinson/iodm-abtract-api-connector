@@ -178,13 +178,14 @@ def create_customer_payload(all_clients, clients_contacts, clients_adress, user_
                 }
                 for contact in contacts
             ],
-            # "CustomFields": [
-            #     {
-            #         "Name": "Comment",
-            #         "Value": all_clients.get("Comment", ""),
-            #         }
-            # ]
+            "CustomFields": [
+                {
+                    "Name": "Customer Comment",
+                    "Value": str(client.get("Comment") if client.get("Comment") else "-"),
+                }
+            ]
         }
+        print(str(client.get("Comment") if client.get("Comment") else "-"), "COmment")
         contacts_dict = {
             f"contact{index+1}": {  # Dynamic key for each contact
                 "FirstName": contact.get("FirstName"),
@@ -513,11 +514,11 @@ def update_data_synced(customers, invoices):
         invoice.save()
 
 
-def upload_invoice_attachment( invoice_number, file_path):
+def upload_invoice_attachment( invoice_number, file_path, filename):
     #get user where username is atl_testing
     user = User.objects.get(username="atl_testing")
     access_token = get_access_token(user.iodm_api_key, user.iodm_token)
-    attach_invoice(invoice_number, file_path, access_token)
+    attach_invoice(invoice_number, file_path, access_token, filename)
 
 def main():
     users = User.objects.filter(is_staff=False)

@@ -131,12 +131,12 @@ def get_invoice(invoice_number, access_token):
     print("Response:", response.json())
     return response.json()["data"]["GetInvoicesForCompany"]["Invoices"][0]["Uri"]
 
-def get_invoice_attachment_url(uri, access_token):
+def get_invoice_attachment_url(uri, access_token, filename):
     url = "https://api.sandbox.iodmconnectonline.com/document/attachtoresource"
     body = {
     "IsPublic": "true",
-    "Title": "Invoice from code Attachment ",
-    "FileName": "Invoice 16862",
+    "Title": filename,
+    "FileName": filename,
     "Resource": {
         "Uri": uri
     }
@@ -155,19 +155,25 @@ def get_invoice_attachment_url(uri, access_token):
 def upload_invoice_attachment(file_path, attachment_url, access_token):
     url = attachment_url
     headers = {
-    'Content-Type': 'multipart/form-data'
-    # "Content-Type": "application/octet-stream"
+    'Content-Type': 'application/pdf'
+    # 'Authorization': f"{access_token}"
     }
-    with open(file_path, "rb") as file:
-        print("S")
-        files = {"file": (file_path, file, "application/octet-stream")}
-        response = requests.put(url, headers=headers, data=file)
-        print("Response:", response.json())
-        print("Status Code:", response.status_code)
-    
+    try:
+        with open(file_path, "rb") as file:
+            print("S")
 
-def attach_invoice(invoice_number, file_path, access_token):
+            files = {"file": (file_path, file, "application/octet-stream")}
+            print(file)
+            #convert file to json
+            response = requests.put(url, data=file)
+            # print("Response:", response.json())
+            # print("Status Code:", response.status_code)
+            print("Response:", response)
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+def attach_invoice(invoice_number, file_path, access_token,filename):
     uri = get_invoice(invoice_number, access_token)
-    attachment_url = get_invoice_attachment_url(uri, access_token)
+    attachment_url = get_invoice_attachment_url(uri, access_token, filename)
     upload_invoice_attachment(file_path, attachment_url, access_token)
 
