@@ -4,13 +4,13 @@ from ..serializer import CustomerSerializer, InvoiceSerializer
 from ..models import Customer, Invoice, User
 from .invoice_attach import attach_invoice
 iodm_url = "https://api.sandbox.iodmconnectonline.com/"
-abtract_url = "https://www.abtraconline.com/api/abtraccustomapi"
+abtract_url = "https://api.abtraconline.com/api/abtraccustomapi"
 global invalid_cust 
 invalid_cust = []
 def get_clients(secret_key):
     # this is for abtract api
     url = (
-        "https://www.abtraconline.com/api/abtraccustomapi/GetClientsList?user=&password=&secretKey="
+        f"{abtract_url}/GetClientsList?user=&password=&secretKey="
         + secret_key
     )
     response = requests.get(url)
@@ -18,6 +18,7 @@ def get_clients(secret_key):
     #for each client create a dict with key value ClientID and value is ClientCode 
     all_clients = {}
     for client in client_data:
+        print(client)
         all_clients[client.get("ClientID")] = {
             "ClientCode": client.get("ClientCode"),
             "ClientName": client.get("ClientName"),
@@ -383,7 +384,8 @@ def create_invoice_payload(user_id, invoices, all_clients):
             total_amount = 1
         invoice_payload = {
             "InvoiceCode": str(invoice.get("InvoiceID")),
-            "Number": str(invoice.get("InvoiceNumber")),
+            "Number": str(invoice.get("InvoiceNumber")
+                          ),
             "CreatedDate": invoice.get("InvoiceDate"),
             "DueDate": invoice.get("DueDate"),
             "OriginalAmount": str(abs(total_amount)),
@@ -526,43 +528,44 @@ def main():
     for user in users:
         secret_key = user.abtract_secret_key
         all_clients = get_clients(secret_key)
-        client_contacts = get_client_contacts(secret_key)
-        clients_adress = get_client_adress(secret_key)
+        print(all_clients)
+        # client_contacts = get_client_contacts(secret_key)
+        # clients_adress = get_client_adress(secret_key)
        
-        customers, customer_serializer_payload = create_customer_payload(
-            all_clients, client_contacts, clients_adress, user.id
-        )
+        # customers, customer_serializer_payload = create_customer_payload(
+        #     all_clients, client_contacts, clients_adress, user.id
+        # )
         
-        print("-=-------=-=-= customers_done")
-        invoices = get_all_invoices(
-            secret_key, user
-        )
-        print(timezone.now())
+        # print("-=-------=-=-= customers_done")
+        # invoices = get_all_invoices(
+        #     secret_key, user
+        # )
+        # print(timezone.now())
         
-        invoices, invoice_serializer_payload = create_invoice_payload(user.id, invoices, all_clients)
-        print(timezone.now())
-        # write invoices to a text file
+        # invoices, invoice_serializer_payload = create_invoice_payload(user.id, invoices, all_clients)
+        # print(timezone.now())
+        # # write invoices to a text file
 
-        print("-=-------=-=-= invoices_payload_done")
-        access_token = get_access_token(user.iodm_api_key, user.iodm_token)
-        print(timezone.now())
-        # save customer to db
-        save_data_to_db(customer_serializer_payload, invoice_serializer_payload)
-        print(timezone.now())
-        print("-=-------=-=-= save_data_to_db_done")
-        # save data to iodm
-        # customers, invoices = get_data_not_synced()
-        print(timezone.now())
-        print("-=-------=-=-= get_data_not_synced_done")
-        save_customer(access_token, customers)
-        print(timezone.now())
-        print("-=-------=-=-= save_customer_done")
-        print("invoices length", len(invoices))
-        save_invoice(access_token, invoices)
-        print(timezone.now())
-        customers = Customer.objects.filter(is_synced=False)
-        invoices = Invoice.objects.filter(is_synced=False)
-        update_data_synced(customers, invoices)
-        print(timezone.now())
-        print("-=-------=-=-= update_data_synced_done")
-        print("Data Synced")
+        # print("-=-------=-=-= invoices_payload_done")
+        # access_token = get_access_token(user.iodm_api_key, user.iodm_token)
+        # print(timezone.now())
+        # # save customer to db
+        # save_data_to_db(customer_serializer_payload, invoice_serializer_payload)
+        # print(timezone.now())
+        # print("-=-------=-=-= save_data_to_db_done")
+        # # save data to iodm
+        # # customers, invoices = get_data_not_synced()
+        # print(timezone.now())
+        # print("-=-------=-=-= get_data_not_synced_done")
+        # save_customer(access_token, customers)
+        # print(timezone.now())
+        # print("-=-------=-=-= save_customer_done")
+        # print("invoices length", len(invoices))
+        # save_invoice(access_token, invoices)
+        # print(timezone.now())
+        # customers = Customer.objects.filter(is_synced=False)
+        # invoices = Invoice.objects.filter(is_synced=False)
+        # update_data_synced(customers, invoices)
+        # print(timezone.now())
+        # print("-=-------=-=-= update_data_synced_done")
+        # print("Data Synced")
