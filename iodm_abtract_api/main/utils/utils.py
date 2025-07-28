@@ -18,7 +18,6 @@ def get_clients(secret_key):
     #for each client create a dict with key value ClientID and value is ClientCode 
     all_clients = {}
     for client in client_data:
-        print(client)
         all_clients[client.get("ClientID")] = {
             "ClientCode": client.get("ClientCode"),
             "ClientName": client.get("ClientName"),
@@ -99,7 +98,6 @@ def create_customer_payload(all_clients, clients_contacts, clients_adress, user_
 
         # values_missing = False 
         if not contacts:
-            print(client_id," ",client.get("ClientCode"), "no contact")
             values_missing = True
             #create a empty list of contacts
             
@@ -186,7 +184,6 @@ def create_customer_payload(all_clients, clients_contacts, clients_adress, user_
                 }
             ]
         }
-        print(str(client.get("Comment") if client.get("Comment") else "-"), "COmment")
         contacts_dict = {
             f"contact{index+1}": {  # Dynamic key for each contact
                 "FirstName": contact.get("FirstName"),
@@ -288,6 +285,80 @@ def create_customer_payload(all_clients, clients_contacts, clients_adress, user_
     #     customers.append(customer)
     # return customers, customer_serializer_payload
 
+def parse_address(input_str):
+    # Normalize delimiters: replace commas with spaces, then split
+    if not input_str:
+        return "", "", ""
+    parts = input_str.replace(',', ' ').split()
+    
+    # Initialize default values
+    city = state = postcode = ""
+
+    # Assign values based on number of parts
+    if len(parts) == 3:
+        city, state, postcode = parts
+    elif len(parts) == 2:
+        city, state = parts
+    elif len(parts) == 1:
+        city = parts[0]
+    # else: all remain as empty strings
+
+    return city, state, postcode
+
+def get_job_customer(secret_key, all_clients):
+    url = (
+        f"{abtract_url}/GetJobsList?user=&password=&secretKey="+secret_key
+    )
+
+    response = requests.get(url)
+    jobs_data = response.json()
+    all_jobs = []
+    for job in jobs_data:
+        city , state, postcode = parse_address(job.get("BillingAddress3"))
+        adress = {
+            "Address1" : job.get("BillingAddress1" , "n/a"),
+            "Address2" : job.get("BillingAddress2", "n/a"),
+            "city": city,
+            "state": state,
+            "postcode": postcode
+
+        }
+        parent_customer_code = str(all_clients[job.get("ClientID")]['ClientCode'])
+        customer_job_data = {
+            "CustomerCode": str(job.get("JobID")),
+            "ParentCustomerCode" : parent_customer_code,
+            "CompanyName": job.get("ClientName"),
+            "DisplayName": job.get("ClientName"),
+            "TaxNumber": "",
+            "SecondaryTaxNumber": "",
+            "IsVip": "false",
+            "Contacts": [
+                {
+                    "FirstName": job.get("JobOwner1Name", "n/a"),
+                    "LastName": job.get("JobOwner2Name", "n/a"),
+                    "AddressLine1": adress.get("Address1", "n/a"),
+                    "AddressLine2": adress.get("Address2", "n/a"),
+                    "City": adress.get("city", "n/a"),
+                    "State": adress.get("state", "na"),
+                    "Postcode": adress.get("postcode", "45"),
+                    "Country": "AU",
+                    "Email": job.get("BillingAddressEmail", "na@g.com"),
+                    "MobileNumber": job.get("Mobile", "0444 444 444"),
+                    "PhoneNumber": job.get("Phone", "0444 444 444"),
+                }
+                
+            ],
+            "CustomFields": [
+                {
+                    "Name": "Customer Comment",
+                    "Value": str(job.get("Comment"
+                                            ) if job.get("Comment") else "-"),
+                },
+                
+            ]
+        }
+        all_jobs.append(customer_job_data)
+    return all_jobs
 
 def get_invoices(secret_key):
     # this is for abtract api
@@ -322,7 +393,6 @@ def get_all_invoices(secret_key, user):
     page_size = user.abtract_page_size
     paid_invoices = []
     for page in range(start_page, page_size+1):
-        print("page number", page)
         url = f"{abtract_url}/GetInvoiceList?page={page}&user=&password=&secretKey={secret_key}"
         response = requests.get(url)
         data = response.json()
@@ -332,13 +402,10 @@ def get_all_invoices(secret_key, user):
         #check if next page exists 
         end_page = page_size 
         while True: 
-            print("page number", end_page)
             new_end_page = end_page + 1
             url = f"{abtract_url}/GetInvoiceList?page={new_end_page}&user=&password=&secretKey={secret_key}"
             response = requests.get(url)
             data = response.json()
-            print(data, "data")
-            print("data length", len(data))
             if len(data) == 0:
                 break
             for invoice in data:
@@ -372,8 +439,6 @@ def create_invoice_payload(user_id, invoices, all_clients):
             "ClientCode"
         )
         if not customer_code:
-            print("customer code not found")
-            print(invoice.get("Client").get("ClientID"), "--------", all_clients.get(invoice.get("Client").get("ClientID")))
             continue
         amount_paid = (invoice or {}).get("AmountPaidInclTax", 0)
         amount_owing = str(total_amount - amount_paid)
@@ -434,7 +499,6 @@ def get_access_token(iodm_access_key, iodm_secret_key):
     headers = {"Content-Type": "application/json"}
     response = requests.post(url, headers=headers, json=body)
     data = response.json()
-    print(data.get("AccessToken"))
     return data.get("AccessToken")
 
 
@@ -460,8 +524,7 @@ def save_customer(access_token, customers):
         else:
             print("REsp", response)
             print("Customer not saved")
-        print(response)
-
+       
 
 def save_invoice(access_token, invoices):
     invoices_per_page = 99
@@ -478,7 +541,7 @@ def save_invoice(access_token, invoices):
         }
         response = requests.post(url, headers=headers, json=body)
         if response.status_code == 200:
-            print(response.json())  # print the response
+            continue  # print the response
         else:
             print("REsp", response.json())
             print("invoice")
@@ -528,15 +591,16 @@ def main():
     for user in users:
         secret_key = user.abtract_secret_key
         all_clients = get_clients(secret_key)
-        print(all_clients)
-        # client_contacts = get_client_contacts(secret_key)
-        # clients_adress = get_client_adress(secret_key)
+        client_contacts = get_client_contacts(secret_key)
+        clients_adress = get_client_adress(secret_key)
        
-        # customers, customer_serializer_payload = create_customer_payload(
-        #     all_clients, client_contacts, clients_adress, user.id
-        # )
+        customers, customer_serializer_payload = create_customer_payload(
+            all_clients, client_contacts, clients_adress, user.id
+        )
         
         # print("-=-------=-=-= customers_done")
+        job_customer = get_job_customer(secret_key, all_clients)
+        print(job_customer[0])
         # invoices = get_all_invoices(
         #     secret_key, user
         # )
@@ -547,7 +611,7 @@ def main():
         # # write invoices to a text file
 
         # print("-=-------=-=-= invoices_payload_done")
-        # access_token = get_access_token(user.iodm_api_key, user.iodm_token)
+        access_token = get_access_token(user.iodm_api_key, user.iodm_token)
         # print(timezone.now())
         # # save customer to db
         # save_data_to_db(customer_serializer_payload, invoice_serializer_payload)
@@ -557,9 +621,10 @@ def main():
         # # customers, invoices = get_data_not_synced()
         # print(timezone.now())
         # print("-=-------=-=-= get_data_not_synced_done")
-        # save_customer(access_token, customers)
+        #save_customer(access_token, customers)
+        save_customer(access_token, job_customer)
         # print(timezone.now())
-        # print("-=-------=-=-= save_customer_done")
+        print("-=-------=-=-= save_customer_done")
         # print("invoices length", len(invoices))
         # save_invoice(access_token, invoices)
         # print(timezone.now())

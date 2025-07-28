@@ -1,0 +1,3 @@
+getclientcontactlist = "https://api.abtraconline.com/api/abtraccustomapi/GetClientContactList?user=&password=&secretKey=r5pHBEXDuGF3WdQev96w8nx7KcJRgUzNMZS2fLma"
+getClientdetails = "https://api.abtraconline.com/api/abtraccustomapi/GetClientList?user=&password=&secretKey=r5pHBEXDuGF3WdQev96w8nx7KcJRgUzNMZS2fLma"
+getJobDetails = "https://api.abtraconline.com/api/abtraccustomapi/GetJobsList?user=&password=&secretKey=r5pHBEXDuGF3WdQev96w8nx7KcJRgUzNMZS2fLma"
