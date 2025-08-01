@@ -334,8 +334,8 @@ def get_job_customer(secret_key, all_clients):
             "IsVip": "false",
             "Contacts": [
                 {
-                    "FirstName": job.get("JobOwner1Name", "n/a"),
-                    "LastName": job.get("JobOwner2Name", "n/a"),
+                    "FirstName": "",
+                    "LastName": "",
                     "AddressLine1": adress.get("Address1", "n/a"),
                     "AddressLine2": adress.get("Address2", "n/a"),
                     "City": adress.get("city", "n/a"),
@@ -353,7 +353,12 @@ def get_job_customer(secret_key, all_clients):
                     "Name": "Customer Comment",
                     "Value": str(job.get("Comment"
                                             ) if job.get("Comment") else "-"),
+                    
                 },
+                {
+                    "Name": "Project Manager Name", 
+                    "Value": str(job.get("JobOwner1Name") if job.get("JobOwner1Name") else "-")
+                }
                 
             ]
         }
@@ -399,10 +404,12 @@ def get_all_invoices(secret_key, user):
         for invoice in data:
             invoices.append(invoice)
     try: 
-        #check if next page exists 
+        #check if next page exists
+         
         end_page = page_size 
         while True: 
             new_end_page = end_page + 1
+            print(new_end_page)
             url = f"{abtract_url}/GetInvoiceList?page={new_end_page}&user=&password=&secretKey={secret_key}"
             response = requests.get(url)
             data = response.json()
@@ -522,7 +529,7 @@ def save_customer(access_token, customers):
             print(response.json())  # print the response
             # continue
         else:
-            print("REsp", response)
+            print("REsp", response.json())
             print("Customer not saved")
        
 
@@ -601,14 +608,14 @@ def main():
         # print("-=-------=-=-= customers_done")
         job_customer = get_job_customer(secret_key, all_clients)
         print(job_customer[0])
-        # invoices = get_all_invoices(
-        #     secret_key, user
-        # )
-        # print(timezone.now())
+        invoices = get_all_invoices(
+            secret_key, user
+        )
+        print(timezone.now())
         
-        # invoices, invoice_serializer_payload = create_invoice_payload(user.id, invoices, all_clients)
-        # print(timezone.now())
-        # # write invoices to a text file
+        invoices, invoice_serializer_payload = create_invoice_payload(user.id, invoices, all_clients)
+        print(timezone.now())
+        # write invoices to a text file
 
         # print("-=-------=-=-= invoices_payload_done")
         access_token = get_access_token(user.iodm_api_key, user.iodm_token)
@@ -625,8 +632,8 @@ def main():
         save_customer(access_token, job_customer)
         # print(timezone.now())
         print("-=-------=-=-= save_customer_done")
-        # print("invoices length", len(invoices))
-        # save_invoice(access_token, invoices)
+        print("invoices length", len(invoices))
+        save_invoice(access_token, invoices)
         # print(timezone.now())
         # customers = Customer.objects.filter(is_synced=False)
         # invoices = Invoice.objects.filter(is_synced=False)
