@@ -358,7 +358,17 @@ def get_job_customer(secret_key, all_clients):
                 {
                     "Name": "Project Manager Name", 
                     "Value": str(job.get("JobOwner1Name") if job.get("JobOwner1Name") else "-")
-                }
+                },
+                {
+                    # "Job Code": str(invoice.get("Job").get("JobCode")),
+                    # "Job Description": str(invoice.get("Job").get("JobDescription")),
+                    "Name": "Project Number", 
+                    "Value": str(job.get("JobCode")),
+                },
+                {
+                    "Name": "Project Name",
+                    "Value": str(job.get("Description") or "N/A"),
+                },
                 
             ]
         }
@@ -407,8 +417,9 @@ def get_all_invoices(secret_key, user):
         #check if next page exists
          
         end_page = page_size 
+        new_end_page = end_page
         while True: 
-            new_end_page = end_page + 1
+            new_end_page = new_end_page + 1
             print(new_end_page)
             url = f"{abtract_url}/GetInvoiceList?page={new_end_page}&user=&password=&secretKey={secret_key}"
             response = requests.get(url)
@@ -466,16 +477,16 @@ def create_invoice_payload(user_id, invoices, all_clients):
                 "CustomerCode": customer_code,
             },
             "CustomFields": [
-                {
-                    # "Job Code": str(invoice.get("Job").get("JobCode")),
-                    # "Job Description": str(invoice.get("Job").get("JobDescription")),
-                    "Name": "Project Number", 
-                    "Value": str(invoice.get("Job").get("JobCode")),
-                },
-                {
-                    "Name": "Project Name",
-                    "Value": str(invoice.get("Job").get("JobDescription") or "N/A"),
-                },
+                # {
+                #     # "Job Code": str(invoice.get("Job").get("JobCode")),
+                #     # "Job Description": str(invoice.get("Job").get("JobDescription")),
+                #     "Name": "Project Number", 
+                #     "Value": str(invoice.get("Job").get("JobCode")),
+                # },
+                # {
+                #     "Name": "Project Name",
+                #     "Value": str(invoice.get("Job").get("JobDescription") or "N/A"),
+                # },
                 {
                     "Name": "Invoice Comment",
                     "Value": str(invoice.get("Comment") or "N/A") ,
@@ -529,7 +540,10 @@ def save_customer(access_token, customers):
             print(response.json())  # print the response
             # continue
         else:
-            print("REsp", response.json())
+            try:
+                print("REsp", response.json())
+            except:
+                print("resp", response)
             print("Customer not saved")
        
 
@@ -628,7 +642,7 @@ def main():
         # # customers, invoices = get_data_not_synced()
         # print(timezone.now())
         # print("-=-------=-=-= get_data_not_synced_done")
-        #save_customer(access_token, customers)
+        save_customer(access_token, customers)
         save_customer(access_token, job_customer)
         # print(timezone.now())
         print("-=-------=-=-= save_customer_done")
