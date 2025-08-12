@@ -30,13 +30,6 @@ def start():
         replace_existing=True,
     )
 
-    # scheduler.add_job(
-    #     job_runner,
-    #     trigger=IntervalTrigger(seconds=200),
-    #     id="test_every_10_seconds",
-    #     replace_existing=True,
-    # )
-
     register_events(scheduler)
     scheduler.start()
     print("Scheduler started...")

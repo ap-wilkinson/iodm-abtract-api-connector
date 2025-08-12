@@ -8,5 +8,5 @@ class MainConfig(AppConfig):
     def ready(self):
         if os.environ.get('RUN_MAIN', None) != 'true':  # Prevent double-start with runserver
             return
-        from .scheduler import start
+        from .scheduler import start 
         start()
