@@ -604,7 +604,7 @@ def upload_invoice_attachment( invoice_number, file_path, filename):
     #get user where username is atl_testing
     user = User.objects.get(username="atl_testing")
     access_token = get_access_token(user.iodm_api_key, user.iodm_token)
-    attach_invoice(invoice_number, file_path, access_token, filename)
+    return attach_invoice(invoice_number, file_path, access_token, filename)
 
 def main():
     users = User.objects.filter(is_staff=False)

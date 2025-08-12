@@ -169,11 +169,15 @@ def upload_invoice_attachment(file_path, attachment_url, access_token):
             # print("Response:", response.json())
             # print("Status Code:", response.status_code)
             print("Response:", response)
+            return True
     except Exception as e:
         print(f"An error occurred: {e}")
+        return False
 
 def attach_invoice(invoice_number, file_path, access_token,filename):
     uri = get_invoice(invoice_number, access_token)
-    attachment_url = get_invoice_attachment_url(uri, access_token, filename)
-    upload_invoice_attachment(file_path, attachment_url, access_token)
+    if uri:
+        attachment_url = get_invoice_attachment_url(uri, access_token, filename)
+        return upload_invoice_attachment(file_path, attachment_url, access_token)
+    
 

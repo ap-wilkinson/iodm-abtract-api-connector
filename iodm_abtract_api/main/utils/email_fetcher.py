@@ -15,21 +15,22 @@ def check_emails():
     
     try:
         # Login to Gmail (use an App Password if using 2FA)
-        mail.login("support@apwilkinson.com", "kmlx zfox ibnx taoc")  # Replace with your credentials
+        mail.login("atlinvoice@apwilkinson.com", "nwbi fezf slnj tlco")  # Replace with your credentials
 
         # Select the mailbox you want to read from (INBOX is the default)
         mail.select('inbox')
 
         # Search for all emails (you can filter by specific criteria, like UNSEEN for unread emails)
-        status, messages = mail.search(None, 'ALL')
+        status, messages = mail.search(None, 'UNSEEN')
         
         # Convert messages to a list of email IDs
         email_ids = messages[0].split()
 
-        for email_id in email_ids[-10:]:  # Retrieve the last 10 emails
+        for email_id in email_ids:  # Retrieve the last 10 emails
+            print(email_ids)
             # Fetch the email by ID
             status, msg_data = mail.fetch(email_id, '(RFC822)')
-            
+            #set email to opened
             # Parse the email content
             for response_part in msg_data:
                 if isinstance(response_part, tuple):
@@ -61,19 +62,24 @@ def check_emails():
                                     #get email sender
                                     subject = msg["Subject"]
                                     #implement regix to get 16862 from subject in format AT&L September Invoice No:16862, 23-1145 A - Tower Road - Watermain
-                                    invoice_number = re.search(r'Invoice No:(\d+)', subject).group(1)     
-                                    print(invoice_number)                               # Save the PDF content to a file (optional)
+                                    if not subject:
+                                        continue
+                                    invoice_number = re.search(r'invoice\s*no\s*:\s*(\d+)', subject, re.IGNORECASE)
+                                                            
                                     if invoice_number:
+                                        invoice_number = invoice_number.group(1)
                                         # pdf_path = os.path.join("/", 
                                         pdf_path = os.getcwd() + f"/{filename}"
+                                        mail.store(email_id, '+FLAGS', '\\Seen')
                                         with open(pdf_path, "wb") as pdf_file:
                                             pdf_file.write(pdf_content)
 
                                         # Call the upload_attachment function with the PDF and sender's name
                                         sender_name = from_  # You can also extract the sender's name more explicitly if needed
-                                        upload_invoice_attachment(invoice_number, pdf_path, filename)
+                                        if upload_invoice_attachment(invoice_number, pdf_path, filename):
+                                            mail.store(email_id, '+FLAGS', '\\Seen')
                                         # Optionally delete the downloaded PDF after processing
-                                        #os.remove(pdf_path)
+                                        os.remove(pdf_path)
 
                     else:
                         # If it's not multipart, check if the email itself is a PDF attachment (less likely)
@@ -84,7 +90,7 @@ def check_emails():
         mail.logout()
 
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"An error occurred: {e} mail")
 
 
 # Dummy upload_attachment function (you can replace it with your actual implementation)
